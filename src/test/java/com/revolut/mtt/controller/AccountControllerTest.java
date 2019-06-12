@@ -52,7 +52,7 @@ class AccountControllerTest {
         assertEquals(Optional.of(Status.OK), accountResult.status());
         final Account account = accountResult.get();
         assertNotNull(account);
-        assertEquals(1L, account.getAccountId());
+        assertEquals(1L, account.getId());
         assertEquals(2L, account.getUserId());
         assertEquals(new BigDecimal(100), account.getBalance());
         verify(accountRepository).fetchAccount(accountId);
@@ -89,7 +89,7 @@ class AccountControllerTest {
         assertEquals(Optional.of(Status.CREATED), createdAccountResult.status());
         final Account createdAccount = createdAccountResult.get();
         assertNotNull(createdAccount);
-        assertEquals(1L, createdAccount.getAccountId());
+        assertEquals(1L, createdAccount.getId());
         assertEquals(2L, createdAccount.getUserId());
         assertEquals(new BigDecimal(150), createdAccount.getBalance());
         verify(accountRepository).createAccount(account);

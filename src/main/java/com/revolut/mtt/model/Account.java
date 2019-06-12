@@ -16,9 +16,16 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class Account {
 
-    private Long accountId;
+    private Long id;
 
     private Long userId;
 
     private BigDecimal balance;
+
+    public BigDecimal getBalance() {
+        if (balance == null) {
+            balance = BigDecimal.ZERO;
+        }
+        return balance;
+    }
 }

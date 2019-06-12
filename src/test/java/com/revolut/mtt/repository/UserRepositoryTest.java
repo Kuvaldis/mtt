@@ -1,6 +1,5 @@
 package com.revolut.mtt.repository;
 
-import com.github.database.rider.core.api.configuration.DBUnit;
 import com.github.database.rider.core.api.connection.ConnectionHolder;
 import com.github.database.rider.core.api.dataset.DataSet;
 import com.github.database.rider.junit5.DBUnitExtension;
@@ -35,7 +34,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    @DataSet("users.yml")
+    @DataSet("existing_users.yml")
     void should_fetch_user_by_id() throws SQLException {
         // given
         final Long userId = 2L;
@@ -51,7 +50,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    @DataSet("users.yml")
+    @DataSet("existing_users.yml")
     void should_not_fetch_non_existing_user() throws SQLException {
         // given
         final Long userId = 32L;
@@ -64,7 +63,7 @@ class UserRepositoryTest {
     }
 
     @Test
-    @DataSet("users.yml")
+    @DataSet("existing_users.yml")
     void should_create_new_user() throws SQLException {
         // given
         final User newUser = User.builder()
@@ -76,7 +75,7 @@ class UserRepositoryTest {
 
         // then
         assertNotNull(user);
-        assertEquals(3L, user.getId());
+        assertNotNull(user.getId());
         assertEquals("joey", user.getUsername());
     }
 }

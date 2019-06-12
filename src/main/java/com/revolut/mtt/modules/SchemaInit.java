@@ -15,6 +15,8 @@ import java.sql.SQLException;
 
 public class SchemaInit implements Jooby.Module {
 
+    private static volatile boolean initialized = false;
+
     @Override
     public void configure(final Env env, final Config conf, final Binder binder) throws Throwable {
         env.onStart(registry -> {
@@ -26,9 +28,22 @@ public class SchemaInit implements Jooby.Module {
     }
 
     public static void initSchema(final Connection connection) throws SQLException {
+        // init test data
+        if (!initialized) {
+            synchronized (SchemaInit.class) {
+                if (!initialized) {
+                    executeSqlFile(connection, "db/create_schema.sql");
+                    initialized = true;
+                }
+            }
+        }
+    }
+
+    private static void executeSqlFile(final Connection connection,
+                                       final String sql) throws SQLException {
         final InputStream inputStream = SchemaInit.class
                 .getClassLoader()
-                .getResourceAsStream("db/create_schema.sql");
+                .getResourceAsStream(sql);
         if (inputStream == null) {
             throw new RuntimeException("Cannot create schema");
         }

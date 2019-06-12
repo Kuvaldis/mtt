@@ -1,9 +1,9 @@
 package com.revolut.mtt.app;
 
+import com.revolut.mtt.controller.AccountController;
 import com.revolut.mtt.controller.UserController;
 import com.revolut.mtt.modules.SchemaInit;
 import com.revolut.mtt.modules.TransactionSupport;
-import com.revolut.mtt.repository.AccountRepository;
 import org.jooby.Jooby;
 import org.jooby.jdbc.Jdbc;
 import org.jooby.json.Jackson;
@@ -22,7 +22,7 @@ public class App extends Jooby {
 
         // controllers
         use(UserController.class);
-        use(AccountRepository.class);
+        use(AccountController.class);
     }
 
     public static void main(String[] args) {

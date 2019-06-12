@@ -73,7 +73,7 @@ public class AccountController {
                         .message("User should exist")
                         .build());
             }
-            if (account.getBalance() != null && account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
+            if (account.getBalance().compareTo(BigDecimal.ZERO) < 0) {
                 validationErrors.add(ValidationError.builder()
                         .field("balance")
                         .message("Balance should be non-negative")

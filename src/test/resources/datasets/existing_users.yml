@@ -1,0 +1,15 @@
+app_user:
+  - id: 1
+    username: "ross"
+  - id: 2
+    username: "rachel"
+  - id: 3
+    username: "chandler"
+
+account:
+  - id: 10
+    user_id: 1
+    balance: 100.31
+  - id: 20
+    user_id: 2
+    balance: 421.67
