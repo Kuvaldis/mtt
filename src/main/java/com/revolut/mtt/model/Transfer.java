@@ -16,9 +16,14 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class Transfer {
 
-    private Long fromAccountId;
+    /**
+     * User making actual transfer
+     */
+    private Long endUserId;
 
-    private Long toAccountId;
+    private Long sourceAccountId;
+
+    private Long destinationAccountId;
 
     private BigDecimal amount;
 }

@@ -8,10 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-
 import java.math.BigDecimal;
 
-import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
 import static io.restassured.path.json.config.JsonPathConfig.NumberReturnType.BIG_DECIMAL;
@@ -41,8 +39,6 @@ public class AccountControllerIntegrationTest {
                 .getLong("id");
 
         // create account
-
-        // create
 
         // given
         final JsonObject newAccount = Json.createObjectBuilder()

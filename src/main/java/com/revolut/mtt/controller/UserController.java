@@ -63,6 +63,7 @@ public class UserController {
                     .message("Username should not be empty")
                     .build());
         }
+        // todo validate user with username does not exist
         return errors;
     }
 }
