@@ -5,6 +5,7 @@ Money transfer test example.
 Java 11 is required.
 
 Only minimum necessary REST API operations are added. For more explanations see 'Rationale' section.
+Body format should be "application/json" for both, request and response.
 
 Following operations are provided:
 * **POST /users**. Creates a new user. Http request example:
