@@ -115,6 +115,11 @@ there already is an open connection in a transaction mode created.
 
 Can be easily modified to create a transaction per route, but it's not required.
 
+## Schema migration
+
+Simple custom schema migration mechanism was added. No schema versions support.
+Flyway could be used, but is not really required in our example.
+
 ## Validation
 
 No validation framework (e.g. Hibernate Validator) was used since it only complicates things for our simple case.
