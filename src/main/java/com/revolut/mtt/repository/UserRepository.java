@@ -79,7 +79,8 @@ public class UserRepository {
         ResultSet resultSet = null;
 
         try {
-            preparedStatement = connection.prepareStatement("insert into app_user (username) values (?)", Statement.RETURN_GENERATED_KEYS);
+            preparedStatement = connection.prepareStatement("insert into app_user (username) values (?)",
+                    Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setString(1, user.getUsername());
             preparedStatement.executeUpdate();
             resultSet = preparedStatement.getGeneratedKeys();

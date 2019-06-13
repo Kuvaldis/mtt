@@ -1,31 +1,34 @@
 package com.revolut.mtt.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import lombok.*;
 
 import java.math.BigDecimal;
 
 /**
  * Class representing money transfer between two accounts.
  */
-@Data
-@Builder(toBuilder = true)
-@NoArgsConstructor
+@Value
+@Builder(toBuilder = true, builderClassName = "TransferBuilder")
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(builder = Transfer.TransferBuilder.class)
 public class Transfer {
 
     /**
      * On behalf of who the transfer is actually being made.
      */
-    private Long endUserId;
+    private final Long endUserId;
 
-    private Long sourceAccountId;
+    private final Long sourceAccountId;
 
-    private Long destinationAccountId;
+    private final Long destinationAccountId;
 
-    private BigDecimal amount;
+    private final BigDecimal amount;
+
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class TransferBuilder {
+    }
 }

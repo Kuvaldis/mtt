@@ -1,22 +1,27 @@
 package com.revolut.mtt.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 
 /**
- * Class representing a user.
+ * Class representing a user. Made immutable.
  */
-@Data
-@Builder(toBuilder = true)
-@NoArgsConstructor
+@Value
+@Builder(toBuilder = true, builderClassName = "UserBuilder")
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(builder = User.UserBuilder.class)
 public class User {
 
-    private Long id;
+    private final Long id;
 
-    private String username;
+    private final String username;
+
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class UserBuilder {
+    }
 }

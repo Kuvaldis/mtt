@@ -80,7 +80,7 @@ class UserControllerTest {
     @Test
     void user_without_username_should_not_be_created() {
         // given
-        final User user = new User();
+        final User user = User.builder().build();
 
         // when
         final ValidationException validationException =

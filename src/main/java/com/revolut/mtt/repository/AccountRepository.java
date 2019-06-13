@@ -72,7 +72,7 @@ public class AccountRepository {
             preparedStatement = connection.prepareStatement("insert into account (user_id, balance) values (?, ?)",
                             Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setLong(1, account.getUserId());
-            preparedStatement.setBigDecimal(2, account.getBalance());
+            preparedStatement.setBigDecimal(2, account.getBalance() == null ? BigDecimal.ZERO : account.getBalance());
             preparedStatement.executeUpdate();
             resultSet = preparedStatement.getGeneratedKeys();
             resultSet.next();
