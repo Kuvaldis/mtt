@@ -2,6 +2,8 @@
 
 Money transfer test example.
 
+Java 11 is required.
+
 Only minimum necessary REST API operations are added. For more explanations see 'Rationale' section.
 
 Following operations are provided:
