@@ -2,10 +2,10 @@
 
 Money transfer test example.
 
-Java 11 is required.
-
-Only minimum necessary REST API operations are added. For more explanations see 'Rationale' section.
-Body format should be "application/json" for both, request and response.
+* Java 11 is required.
+* Only minimum necessary REST API operations are added. For more explanations see 'Rationale' section.
+* Body format should be "application/json" for both, request and response.
+* Service is run on port 8080 by default.
 
 Following operations are provided:
 * **POST /users**. Creates a new user. Http request example:
