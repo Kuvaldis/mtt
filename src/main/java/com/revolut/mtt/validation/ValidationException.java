@@ -2,6 +2,9 @@ package com.revolut.mtt.validation;
 
 import java.util.List;
 
+/**
+ * Common validation exception
+ */
 public class ValidationException extends RuntimeException {
 
     private final List<ValidationError> errors;

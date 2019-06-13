@@ -15,11 +15,12 @@ import org.jooby.mvc.Path;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Controller for handling user
+ * Entry point for user operations.
  */
 @Singleton
 @Path("/users")
@@ -51,19 +52,30 @@ public class UserController {
                 .type(MediaType.json);
     }
 
-    private List<ValidationError> validateNewUser(final User user) {
+    private List<ValidationError> validateNewUser(final User user) throws SQLException {
         final List<ValidationError> errors = new ArrayList<>();
         if (user == null) {
             errors.add(ValidationError.builder()
                     .message("User should not be null")
                     .build());
-        } else if (user.getUsername() == null || user.getUsername().isEmpty()) {
+            return errors;
+        }
+
+        if (user.getUsername() == null || user.getUsername().isEmpty()) {
             errors.add(ValidationError.builder()
                     .field("username")
                     .message("Username should not be empty")
                     .build());
+            return errors;
         }
-        // todo validate user with username does not exist
+
+        if (userRepository.fetchUserByUsername(user.getUsername()).isPresent()) {
+            errors.add(ValidationError.builder()
+                    .field("username")
+                    .message("Username already exists")
+                    .build());
+        }
+
         return errors;
     }
 }

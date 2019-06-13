@@ -1,9 +1,9 @@
-package com.revolut.mtt.modules;
+package com.revolut.mtt.database;
 
 import java.sql.Connection;
 
 /**
- * Provides already open connection, so different beans could use the same connection within one request.
+ * Provides already open connection, so different classes could use the same connection within one request/thread.
  */
 public class ThreadLocalConnectionProvider implements ConnectionProvider {
 

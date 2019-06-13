@@ -4,7 +4,7 @@ import com.github.database.rider.core.api.connection.ConnectionHolder;
 import com.github.database.rider.core.api.dataset.DataSet;
 import com.github.database.rider.junit5.DBUnitExtension;
 import com.revolut.mtt.model.Account;
-import com.revolut.mtt.modules.SchemaInit;
+import com.revolut.mtt.database.SchemaInit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,5 +81,38 @@ class AccountRepositoryTest {
         assertNotNull(account.getId());
         assertEquals(3L, account.getUserId());
         assertEquals(new BigDecimal(123), account.getBalance());
+    }
+
+    @Test
+    @DataSet("existing_users.yml")
+    void should_apply_balance_to_existing_account() throws SQLException {
+        // given
+        final Long accountId = 30L;
+        final BigDecimal newBalance = new BigDecimal("31.21");
+
+        // when
+        final boolean balanceApplied = accountRepository.applyBalance(accountId, newBalance);
+        final BigDecimal balance = accountRepository.fetchAccount(accountId)
+                .map(Account::getBalance)
+                .orElse(null);
+
+        // then
+        assertTrue(balanceApplied);
+        assertNotNull(balance);
+        assertEquals(new BigDecimal("31.21"), balance);
+    }
+
+    @Test
+    @DataSet("existing_users.yml")
+    void should_not_apply_balance_to_non_existing_account() throws SQLException {
+        // given
+        final Long accountId = 24L;
+        final BigDecimal newBalance = new BigDecimal(1_000_000);
+
+        // when
+        final boolean balanceApplied = accountRepository.applyBalance(accountId, newBalance);
+
+        // then
+        assertFalse(balanceApplied);
     }
 }

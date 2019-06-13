@@ -21,6 +21,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Entry point for account operations.
+ */
 @Singleton
 @Path("/accounts")
 public class AccountController {

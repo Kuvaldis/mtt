@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,6 +81,24 @@ class UserControllerTest {
     void user_without_username_should_not_be_created() {
         // given
         final User user = new User();
+
+        // when
+        final ValidationException validationException =
+                assertThrows(ValidationException.class, () -> userController.createUser(user));
+
+        // then
+        final List<ValidationError> errors = validationException.getErrors();
+        assertEquals(1, errors.size());
+        final ValidationError error = errors.get(0);
+        assertEquals("username", error.getField());
+    }
+
+    @Test
+    void user_with_existing_username_should_not_be_created() throws SQLException {
+        // given
+        final User user = new User(null, "phoebe");
+        when(userRepository.fetchUserByUsername("phoebe"))
+                .thenReturn(Optional.of(new User(1L, "phoebe")));
 
         // when
         final ValidationException validationException =

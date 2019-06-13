@@ -4,7 +4,7 @@ import com.github.database.rider.core.api.connection.ConnectionHolder;
 import com.github.database.rider.core.api.dataset.DataSet;
 import com.github.database.rider.junit5.DBUnitExtension;
 import com.revolut.mtt.model.User;
-import com.revolut.mtt.modules.SchemaInit;
+import com.revolut.mtt.database.SchemaInit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,10 +64,39 @@ class UserRepositoryTest {
 
     @Test
     @DataSet("existing_users.yml")
+    void should_fetch_user_by_username() throws SQLException {
+        // given
+        final String username = "chandler";
+
+        /// when
+        final Optional<User> optionalUser = userRepository.fetchUserByUsername(username);
+
+        // then
+        assertTrue(optionalUser.isPresent());
+        final User user = optionalUser.get();
+        assertEquals(3L, user.getId());
+        assertEquals("chandler", user.getUsername());
+    }
+
+    @Test
+    @DataSet("existing_users.yml")
+    void should_not_fetch_non_existing_user_by_username() throws SQLException {
+        // given
+        final String username = "stive";
+
+        /// when
+        final Optional<User> optionalUser = userRepository.fetchUserByUsername(username);
+
+        // then
+        assertFalse(optionalUser.isPresent());
+    }
+
+    @Test
+    @DataSet("existing_users.yml")
     void should_create_new_user() throws SQLException {
         // given
         final User newUser = User.builder()
-                .username("joey")
+                .username("monica")
                 .build();
 
         // when
@@ -76,6 +105,6 @@ class UserRepositoryTest {
         // then
         assertNotNull(user);
         assertNotNull(user.getId());
-        assertEquals("joey", user.getUsername());
+        assertEquals("monica", user.getUsername());
     }
 }

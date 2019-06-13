@@ -1,4 +1,4 @@
-package com.revolut.mtt.modules;
+package com.revolut.mtt.database;
 
 import com.google.inject.Binder;
 import com.typesafe.config.Config;

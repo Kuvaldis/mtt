@@ -1,4 +1,4 @@
-package com.revolut.mtt.modules;
+package com.revolut.mtt.database;
 
 import com.google.inject.Binder;
 import com.typesafe.config.Config;
@@ -13,6 +13,9 @@ import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+/**
+ * Module allowing to initialize schema on service start.
+ */
 public class SchemaInit implements Jooby.Module {
 
     private static volatile boolean initialized = false;

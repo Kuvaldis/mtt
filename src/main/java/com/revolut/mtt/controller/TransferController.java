@@ -7,7 +7,7 @@ import com.revolut.mtt.repository.AccountRepository;
 import com.revolut.mtt.repository.UserRepository;
 import com.revolut.mtt.validation.ValidationError;
 import com.revolut.mtt.validation.ValidationException;
-import org.checkerframework.checker.units.qual.A;
+import lombok.extern.slf4j.Slf4j;
 import org.jooby.Result;
 import org.jooby.Results;
 import org.jooby.Status;
@@ -18,9 +18,12 @@ import org.jooby.mvc.Path;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.util.*;
 
+/**
+ * Entry point for transfer between account operations.
+ */
+@Slf4j
 @Singleton
 @Path("/transfers")
 public class TransferController {
@@ -36,6 +39,12 @@ public class TransferController {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Implementation is based on database locks. Both accounts are locked to update balance.
+     * Other options:
+     * 1. Use optimistic locking based on account version. Makes solution a bit complicated, and not really required in a real world.
+     * 2. Lock only source account. However, during update there is a risk of data integrity problems.
+     */
     @POST
     public Result createTransfer(final @Body Transfer transfer) throws Exception {
         final List<ValidationError> validationErrors = new ArrayList<>();
@@ -51,11 +60,14 @@ public class TransferController {
         final User endUser = userRepository.fetchUser(transfer.getEndUserId())
                 .orElse(null);
         validationErrors.addAll(validateEndUserExists(endUser));
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException(validationErrors);
+        }
 
-        // fetch
+        log.info("Acquire account locks for accounts {}, {}", transfer.getSourceAccountId(), transfer.getDestinationAccountId());
         final Account sourceAccount;
         final Account destinationAccount;
-        // to prevent deadlocks always fetch account with lower id
+        // to prevent deadlocks, always fetch account with lower id first
         if (transfer.getSourceAccountId() < transfer.getDestinationAccountId()) {
             sourceAccount = accountRepository.fetchAccount(transfer.getSourceAccountId(), true)
                     .orElse(null);
@@ -67,28 +79,35 @@ public class TransferController {
             sourceAccount = accountRepository.fetchAccount(transfer.getSourceAccountId(), true)
                     .orElse(null);
         }
-        validationErrors.addAll(validateAccountExists(sourceAccount, "sourceAccountId"));
-        validationErrors.addAll(validateAccountExists(destinationAccount, "destinationAccountId"));
+        validationErrors.addAll(validateAccountAcquired(sourceAccount, "sourceAccountId"));
+        validationErrors.addAll(validateAccountAcquired(destinationAccount, "destinationAccountId"));
         validationErrors.addAll(validateSourceHasEnoughAmount(sourceAccount, transfer.getAmount()));
         validationErrors.addAll(validateAccountBelongToUser(sourceAccount, transfer.getEndUserId()));
 
         if (!validationErrors.isEmpty()) {
             throw new ValidationException(validationErrors);
         }
+        log.info("Account locks for accounts {}, {} are successfully acquired",
+                transfer.getSourceAccountId(), transfer.getDestinationAccountId());
 
         Objects.requireNonNull(sourceAccount);
         Objects.requireNonNull(destinationAccount);
-        final boolean sourceUpdated = accountRepository.addBalance(sourceAccount.getId(), transfer.getAmount().negate());
-        final boolean destinationUpdated = accountRepository.addBalance(destinationAccount.getId(), transfer.getAmount());
-        if (sourceUpdated && destinationUpdated) {
-            return Results.with(Status.OK);
-        } else {
-            throw new RuntimeException("Amount cannot be transferred");
+        final boolean sourceUpdated = accountRepository.applyBalance(sourceAccount.getId(),
+                sourceAccount.getBalance().add(transfer.getAmount().negate()));
+        validationErrors.addAll(validateAccountUpdated(sourceUpdated, "sourceAccountId"));
+        final boolean destinationUpdated = accountRepository.applyBalance(destinationAccount.getId(),
+                destinationAccount.getBalance().add(transfer.getAmount()));
+        validationErrors.addAll(validateAccountUpdated(destinationUpdated, "destinationAccountId"));
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException(validationErrors);
         }
+        log.info("New balances for accounts {}, {} are applied",
+                transfer.getSourceAccountId(), transfer.getDestinationAccountId());
+
+        return Results.with(Status.OK);
     }
 
-
-    private List<ValidationError> validateTransferData(final Transfer transfer) throws SQLException {
+    private List<ValidationError> validateTransferData(final Transfer transfer) {
         final List<ValidationError> validationErrors = new ArrayList<>();
         if (transfer == null) {
             validationErrors.add(ValidationError.builder()
@@ -98,14 +117,14 @@ public class TransferController {
         }
 
         // validate amount is positive
-        if (transfer.getAmount() == null || transfer.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+        if (transfer.getAmount() == null || transfer.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             validationErrors.add(ValidationError.builder()
-                    .field("userId")
-                    .message("User id should not be null")
+                    .field("amount")
+                    .message("Amount should be positive")
                     .build());
         }
 
-        // validate user exists
+        // validate user
         if (transfer.getEndUserId() == null) {
             validationErrors.add(ValidationError.builder()
                     .field("endUserId")
@@ -113,7 +132,7 @@ public class TransferController {
                     .build());
         }
 
-        // validate both accounts exist
+        // validate both accounts
         if (transfer.getSourceAccountId() == null) {
             validationErrors.add(ValidationError.builder()
                     .field("sourceAccountId")
@@ -132,6 +151,11 @@ public class TransferController {
                 transfer.getDestinationAccountId() != null &&
                 transfer.getSourceAccountId().equals(transfer.getDestinationAccountId())) {
             validationErrors.add(ValidationError.builder()
+                    .field("sourceAccountId")
+                    .message("Account ids should be different")
+                    .build());
+            validationErrors.add(ValidationError.builder()
+                    .field("destinationAccountId")
                     .message("Account ids should be different")
                     .build());
         }
@@ -142,19 +166,19 @@ public class TransferController {
     private List<ValidationError> validateEndUserExists(final User endUser) {
         if (endUser == null) {
             return Collections.singletonList(ValidationError.builder()
-                    .field("userId")
-                    .message("User should exist")
+                    .field("endUserId")
+                    .message("End user should exist")
                     .build());
         }
         return Collections.emptyList();
     }
 
-    private List<ValidationError> validateAccountExists(final Account account,
-                                                        final String field) {
+    private List<ValidationError> validateAccountAcquired(final Account account,
+                                                          final String field) {
         if (account == null) {
             return Collections.singletonList(ValidationError.builder()
                     .field(field)
-                    .message("Account should exist")
+                    .message("Account should cannot be acquired")
                     .build());
         }
         return Collections.emptyList();
@@ -178,6 +202,17 @@ public class TransferController {
             return Collections.singletonList(ValidationError.builder()
                     .field("sourceAccountId")
                     .message("Account does not belong to user")
+                    .build());
+        }
+        return Collections.emptyList();
+    }
+
+    private List<ValidationError> validateAccountUpdated(final boolean accountUpdated,
+                                                         final String field) {
+        if (!accountUpdated) {
+            return Collections.singletonList(ValidationError.builder()
+                    .field(field)
+                    .message("Account could not be updated. Try again.")
                     .build());
         }
         return Collections.emptyList();

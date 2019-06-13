@@ -3,17 +3,17 @@ package com.revolut.mtt;
 import com.revolut.mtt.app.App;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
-import io.restassured.path.json.config.JsonPathConfig;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+/**
+ * Junit 5 extension for running Jooby integration tests
+ */
 public class JoobyIntegrationTestExtension implements BeforeAllCallback, AfterAllCallback {
 
-    // todo support as a parameter
     private final App app = new App();
 
     @Override

@@ -5,6 +5,8 @@ app_user:
     username: "rachel"
   - id: 3
     username: "chandler"
+  - id: 4
+    username: "joey"
 
 account:
   - id: 10
@@ -13,3 +15,6 @@ account:
   - id: 20
     user_id: 2
     balance: 421.67
+  - id: 30
+    user_id: 4
+    balance: 14.12
