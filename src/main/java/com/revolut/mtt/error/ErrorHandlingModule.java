@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jooby.*;
 
 /**
- * Common errors handling.
+ * Common errors handling to convert exceptions to http response.
  */
 @Slf4j
 public class ErrorHandlingModule implements Jooby.Module {

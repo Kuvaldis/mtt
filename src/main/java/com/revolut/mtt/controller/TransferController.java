@@ -18,6 +18,7 @@ import org.jooby.mvc.Path;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -56,7 +57,7 @@ public class TransferController {
             throw new ValidationException(validationErrors);
         }
 
-        // check user and toAccount first, so we don't have to set lock if it's not required
+        // check user and toAccount first, so locks can be avoided if not required
         final User endUser = userRepository.fetchUser(transfer.getEndUserId())
                 .orElse(null);
         validationErrors.addAll(validateEndUserExists(endUser));
@@ -65,9 +66,35 @@ public class TransferController {
         }
 
         log.info("Acquire account locks for accounts {}, {}", transfer.getSourceAccountId(), transfer.getDestinationAccountId());
+        final Account[] accounts = fetchAccountsWithLocks(transfer);
+        final Account sourceAccount = accounts[0];
+        final Account destinationAccount = accounts[1];
+        validationErrors.addAll(validateAccountAcquired(sourceAccount, "sourceAccountId"));
+        validationErrors.addAll(validateAccountAcquired(destinationAccount, "destinationAccountId"));
+        validationErrors.addAll(validateSourceHasEnoughAmount(sourceAccount, transfer.getAmount()));
+        validationErrors.addAll(validateAccountBelongsToUser(sourceAccount, transfer.getEndUserId()));
+
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException(validationErrors);
+        }
+        log.info("Account locks for accounts {}, {} are successfully acquired",
+                transfer.getSourceAccountId(), transfer.getDestinationAccountId());
+
+        // make actual transfer
+        validationErrors.addAll(makeTransfer(sourceAccount, destinationAccount, transfer.getAmount()));
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException(validationErrors);
+        }
+        log.info("New balances for accounts {}, {} are applied",
+                transfer.getSourceAccountId(), transfer.getDestinationAccountId());
+
+        return Results.with(Status.OK);
+    }
+
+    private Account[] fetchAccountsWithLocks(final Transfer transfer) throws SQLException {
+        // to prevent deadlocks, always fetch account with lower id first
         final Account sourceAccount;
         final Account destinationAccount;
-        // to prevent deadlocks, always fetch account with lower id first
         if (transfer.getSourceAccountId() < transfer.getDestinationAccountId()) {
             sourceAccount = accountRepository.fetchAccount(transfer.getSourceAccountId(), true)
                     .orElse(null);
@@ -79,32 +106,23 @@ public class TransferController {
             sourceAccount = accountRepository.fetchAccount(transfer.getSourceAccountId(), true)
                     .orElse(null);
         }
-        validationErrors.addAll(validateAccountAcquired(sourceAccount, "sourceAccountId"));
-        validationErrors.addAll(validateAccountAcquired(destinationAccount, "destinationAccountId"));
-        validationErrors.addAll(validateSourceHasEnoughAmount(sourceAccount, transfer.getAmount()));
-        validationErrors.addAll(validateAccountBelongToUser(sourceAccount, transfer.getEndUserId()));
+        return new Account[] {sourceAccount, destinationAccount};
+    }
 
-        if (!validationErrors.isEmpty()) {
-            throw new ValidationException(validationErrors);
-        }
-        log.info("Account locks for accounts {}, {} are successfully acquired",
-                transfer.getSourceAccountId(), transfer.getDestinationAccountId());
-
+    private List<ValidationError> makeTransfer(final Account sourceAccount,
+                                               final Account destinationAccount,
+                                               final BigDecimal amount) throws SQLException {
+        final List<ValidationError> errors = new ArrayList<>();
         Objects.requireNonNull(sourceAccount);
         Objects.requireNonNull(destinationAccount);
         final boolean sourceUpdated = accountRepository.applyBalance(sourceAccount.getId(),
-                sourceAccount.getBalance().add(transfer.getAmount().negate()));
-        validationErrors.addAll(validateAccountUpdated(sourceUpdated, "sourceAccountId"));
+                sourceAccount.getBalance().add(amount.negate()));
+        //noinspection CollectionAddAllCanBeReplacedWithConstructor
+        errors.addAll(validateAccountUpdated(sourceUpdated, "sourceAccountId"));
         final boolean destinationUpdated = accountRepository.applyBalance(destinationAccount.getId(),
-                destinationAccount.getBalance().add(transfer.getAmount()));
-        validationErrors.addAll(validateAccountUpdated(destinationUpdated, "destinationAccountId"));
-        if (!validationErrors.isEmpty()) {
-            throw new ValidationException(validationErrors);
-        }
-        log.info("New balances for accounts {}, {} are applied",
-                transfer.getSourceAccountId(), transfer.getDestinationAccountId());
-
-        return Results.with(Status.OK);
+                destinationAccount.getBalance().add(amount));
+        errors.addAll(validateAccountUpdated(destinationUpdated, "destinationAccountId"));
+        return errors;
     }
 
     private List<ValidationError> validateTransferData(final Transfer transfer) {
@@ -195,8 +213,8 @@ public class TransferController {
         return Collections.emptyList();
     }
 
-    private List<ValidationError> validateAccountBelongToUser(final Account account,
-                                                              final Long endUserId) {
+    private List<ValidationError> validateAccountBelongsToUser(final Account account,
+                                                               final Long endUserId) {
         if (account != null && endUserId != null
                 && !endUserId.equals(account.getUserId())) {
             return Collections.singletonList(ValidationError.builder()

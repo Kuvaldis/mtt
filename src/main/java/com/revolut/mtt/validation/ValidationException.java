@@ -3,7 +3,7 @@ package com.revolut.mtt.validation;
 import java.util.List;
 
 /**
- * Common validation exception
+ * Common validation exception.
  */
 public class ValidationException extends RuntimeException {
 

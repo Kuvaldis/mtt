@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * Adds convenient transactions support to routes.
+ * Adds convenient transactions support to routes, so business logic code should not care about connection handling.
  */
 @Slf4j
 public class TransactionSupport implements Jooby.Module {

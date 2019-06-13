@@ -31,7 +31,6 @@ public class SchemaInit implements Jooby.Module {
     }
 
     public static void initSchema(final Connection connection) throws SQLException {
-        // init test data
         if (!initialized) {
             synchronized (SchemaInit.class) {
                 if (!initialized) {

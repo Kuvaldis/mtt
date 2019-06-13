@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * Class representing user account. Assume currency is always the same for sake of simplicity.
+ * Class representing user account. Assume currency is always the same for sake of simplicity. Made immutable.
  */
 @Data
 @Builder(toBuilder = true, builderClassName = "AccountBuilder")

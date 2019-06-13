@@ -8,7 +8,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 /**
- * Class representing money transfer between two accounts.
+ * Class representing money transfer between two accounts. Made immutable.
  */
 @Value
 @Builder(toBuilder = true, builderClassName = "TransferBuilder")

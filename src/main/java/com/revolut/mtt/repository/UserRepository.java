@@ -9,7 +9,7 @@ import java.sql.*;
 import java.util.Optional;
 
 /**
- * User database operations
+ * User database operations.
  */
 @Singleton
 public class UserRepository {

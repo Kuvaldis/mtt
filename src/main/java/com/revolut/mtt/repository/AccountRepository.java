@@ -10,7 +10,7 @@ import java.sql.*;
 import java.util.Optional;
 
 /**
- * Account database operations
+ * Account database operations.
  */
 @Singleton
 public class AccountRepository {
