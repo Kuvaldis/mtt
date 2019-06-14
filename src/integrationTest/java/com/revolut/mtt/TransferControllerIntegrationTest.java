@@ -12,6 +12,7 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import java.math.BigDecimal;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
@@ -90,6 +91,7 @@ public class TransferControllerIntegrationTest {
         final long account2 = createAccount(phoebe, new BigDecimal(200));
         final long account3 = createAccount(phoebe, new BigDecimal(300));
         final long[] accounts = {account1, account2, account3};
+        final AtomicInteger[] accountBalances = {new AtomicInteger(100), new AtomicInteger(200), new AtomicInteger(300)};
         final ExecutorService executorService = Executors.newFixedThreadPool(20);
         final int numberOfTransfers = 1000;
 
@@ -100,16 +102,22 @@ public class TransferControllerIntegrationTest {
                 final int randomShift = ThreadLocalRandom.current().nextBoolean() ? 1 : -1;
                 final int randomBase = ThreadLocalRandom.current().nextInt(0, accounts.length);
                 final int randomAmount = ThreadLocalRandom.current().nextInt(30);
-                final long sourceAccountId = accounts[randomBase];
-                final long destinationAccountId = accounts[(randomBase + randomShift + accounts.length) % accounts.length];
+                final int sourceAccountIndex = randomBase;
+                final int destinationAccountIndex = (randomBase + randomShift + accounts.length) % accounts.length;
+                final long sourceAccountId = accounts[sourceAccountIndex];
+                final long destinationAccountId = accounts[destinationAccountIndex];
                 final JsonObject transfer = Json.createObjectBuilder()
                         .add("endUserId", phoebe)
                         .add("sourceAccountId", sourceAccountId)
                         .add("destinationAccountId", destinationAccountId)
                         .add("amount", new BigDecimal(randomAmount))
                         .build();
-                given().body(transfer.toString())
+                final Response transferResponse = given().body(transfer.toString())
                         .post("/transfers");
+                if (transferResponse.statusCode() == HttpStatus.SC_OK) {
+                    accountBalances[sourceAccountIndex].addAndGet(-randomAmount);
+                    accountBalances[destinationAccountIndex].addAndGet(randomAmount);
+                }
                 return null;
             }, executorService);
         }
@@ -121,6 +129,9 @@ public class TransferControllerIntegrationTest {
         final BigDecimal balance2 = fetchBalance(account2);
         final BigDecimal balance3 = fetchBalance(account3);
         assertEquals(new BigDecimal(600), balance1.add(balance2).add(balance3));
+        assertEquals(accountBalances[0].get(), balance1.intValue());
+        assertEquals(accountBalances[1].get(), balance2.intValue());
+        assertEquals(accountBalances[2].get(), balance3.intValue());
     }
 
     private static long createUser(final String username) {
