@@ -12,13 +12,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Module allowing to initialize schema on service start.
  */
 public class SchemaInit implements Jooby.Module {
 
-    private static volatile boolean initialized = false;
+    private static AtomicBoolean initialized = new AtomicBoolean();
 
     @Override
     public void configure(final Env env, final Config conf, final Binder binder) throws Throwable {
@@ -31,13 +32,8 @@ public class SchemaInit implements Jooby.Module {
     }
 
     public static void initSchema(final Connection connection) throws SQLException {
-        if (!initialized) {
-            synchronized (SchemaInit.class) {
-                if (!initialized) {
-                    executeSqlFile(connection, "db/create_schema.sql");
-                    initialized = true;
-                }
-            }
+        if (initialized.compareAndSet(false, true)) {
+            executeSqlFile(connection, "db/create_schema.sql");
         }
     }
 
